@@ -27,6 +27,20 @@ class App(ctk.CTk):
         self.sidebar_frame.grid(row=0, column=0, rowspan=4, sticky="nsew")
         self.sidebar_frame.grid_rowconfigure(4, weight=1)
         
+        #Side Bar Additions
+        self.logo_label = ctk.CTkLabel(self.sidebar_frame, text="Personal Finance \rTracker", font=ctk.CTkFont(size=20, weight="bold"))
+        self.logo_label.grid(row=0, column=0, padx=20, pady=(20, 10))
+        self.button_income = ctk.CTkButton(master=self.sidebar_frame, corner_radius=10, text_color = "black", text= "Add income", command=lambda:self.open_input_dialog_event("Add income"))
+        self.button_income.grid(row=1, column = 0, padx=10, pady=10)
+        self.button_expense = ctk.CTkButton(master=self.sidebar_frame, corner_radius=10, text_color = "black", text= "Add expense", command=lambda:self.open_input_dialog_event("Add expense"))
+        self.button_expense.grid(row=2, column = 0, padx=10, pady=10)
+        self.button_history = ctk.CTkButton(master=self.sidebar_frame, corner_radius=10, text_color = "black", text= "Check movements")
+        self.button_history.grid(row=3, column = 0, padx=10, pady=10)
+        self.appearance_mode_label = ctk.CTkLabel(master=self.sidebar_frame, text="Appearance Mode:", anchor="w")
+        self.appearance_mode_label.grid(row=5, column=0, padx=20, pady=(10, 0))
+        self.appearence_mode_list = ctk.CTkOptionMenu(master=self.sidebar_frame, values=["Light", "Dark", "System"], command=self.change_appearance_mode_event)
+        self.appearence_mode_list.grid(row=6, column=0, padx=20, pady=(10, 20))
+        
         #Main Frame
         self.main_frame = ctk.CTkFrame(master=self)
         self.main_frame.grid(row=0, column=1, columnspan=3, rowspan=4, sticky="nsew")
@@ -35,41 +49,16 @@ class App(ctk.CTk):
         #self.main_frame.pack(pady=20, padx=20, fill="both", expand = True)
 
 
+        self.appearence_mode_list.set("Dark")
+    #Functions
+    def change_appearance_mode_event(self, new_appearance_mode: str):
+        ctk.set_appearance_mode(new_appearance_mode)
         
-        #First Label
-        label_1 = ctk.CTkLabel(master=self.main_frame, font=ctk.CTkFont(size=20, weight="bold"), text="Hi! What would you like to do?", justify="center")
-        label_1.grid(row=0, column=0, padx=10, pady=10)
+    def open_input_dialog_event(self, title):
+        dialog = ctk.CTkInputDialog(text="Type in a number:", title=title)
+        print("Input Dialog:", dialog.get_input())
+        
 
-        #Buttons
-        button_1 = ctk.CTkButton(master=self.sidebar_frame, corner_radius=10, text_color = "black", text= "Button 1")
-        button_2 = ctk.CTkButton(master=self.sidebar_frame, corner_radius=10, text_color = "black", text= "Button 2")
-        button_3 = ctk.CTkButton(master=self.sidebar_frame, corner_radius=10, text_color = "black", text= "Button 3")
-        button_1.grid(row=0, pady=10, padx=10)
-        button_2.grid(row=1, pady=10, padx=10)
-        button_3.grid(row=2, pady=10, padx=10)
-
-"""
-Label(main_frame, text="Income:", bg=colors[4]).grid(row=0, column=0, sticky=W)
-income_entry = Entry(main_frame)
-income_entry.config(bg=colors[4])
-income_entry.grid(row=0, column=1, sticky=(W, E))
-
-Label(main_frame, text="Expenses:", bg=colors[4]).grid(row=1, column=0, sticky=W)
-expenses_entry = Entry(main_frame)
-expenses_entry.config(bg=colors[4])
-expenses_entry.grid(row=1, column=1, sticky=(W, E))
-
-def calculate_balance():
-    income = float(income_entry.get())
-    expenses = float(expenses_entry.get())
-    balance = income - expenses
-    result_label.config(text=f"Balance: ${balance:.2f}")
-
-calculate_button = ctk.CTkButton(master=main_frame, corner_radius= 10, text="Calculate Balance", command=calculate_balance)
-calculate_button.grid(row=2, column=2, columnspan=2)
-
-result_label = Label(main_frame, text="Balance: $0.00")
-result_label.grid(row=3, column=3, columnspan=2)"""
 
 
 app= App()
