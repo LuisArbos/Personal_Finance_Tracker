@@ -1,8 +1,6 @@
 # Personal Finance Tracker
-============= 
 
-## Currently work in progress. ##
----------------
+### Currently work in progress. ###
 
 This is another project mainly for personal use. I/m trying to develop a small program with an easy to use GUI using tkinter library. This program has to be able to cover three main functions:
 * Add income
