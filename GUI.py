@@ -9,12 +9,18 @@ appearance_mode_mapping = {
     "English": {
         "Claro": "Light",
         "Oscuro": "Dark",
-        "Sistema": "System"
+        "Sistema": "System",
+        "Light": "Light",
+        "Dark": "Dark",
+        "System": "System"
     },
     "Spanish": {
         "Light": "Claro",
         "Dark": "Oscuro",
-        "System": "Sistema"
+        "System": "Sistema",
+        "Claro": "Claro",
+        "Oscuro": "Oscuro",
+        "Sistema": "Sistema"
     }
 }
 
@@ -24,6 +30,8 @@ translations = {
         "title2": "Personal Finance \rTracker",
         "add_income": "Add Income",
         "add_expense": "Add Expense",
+        "upload": "Upload data",
+        "export": "Export data",
         "no_history": "There is no history data. Please add some data.",
         "history": "Transaction History",
         "appearance_mode": "Appearance Mode:",
@@ -38,6 +46,8 @@ translations = {
         "title2": "Rastreador de \rFinanzas Personales",
         "add_income": "Añadir Ingreso",
         "add_expense": "Añadir Gasto",
+        "upload": "Cargar datos",
+        "export": "Exportar datos",
         "no_history": "No hay datos históricos. Por favor, añada algun dato.",
         "history": "Historial de transacciones",
         "appearance_mode": "Apariencia:",
@@ -70,22 +80,26 @@ class App(ctk.CTk):
 
         #Side Bar Frame
         self.sidebar_frame = ctk.CTkFrame(master=self)
-        self.sidebar_frame.grid(row=0, column=0, rowspan=4, sticky="nsew")
-        self.sidebar_frame.grid_rowconfigure(4, weight=1)
+        self.sidebar_frame.grid(row=0, column=0, rowspan=5, sticky="nsew")
+        self.sidebar_frame.grid_rowconfigure(5, weight=1)
         
         #Side Bar Additions
         self.logo_label = ctk.CTkLabel(self.sidebar_frame, text="Personal Finance \r Tracker", font=ctk.CTkFont(size=20, weight="bold"))
         self.logo_label.grid(row=0, column=0, padx=20, pady=(20, 10))
-        self.button_income = ctk.CTkButton(master=self.sidebar_frame, corner_radius=10, text_color = "black", text= translations[self.language]["add_income"], command=lambda:self.open_input_dialog_event(translations[self.language]["add_income"]))
+        self.button_income = ctk.CTkButton(master=self.sidebar_frame, corner_radius=10, text_color = "black", text=translations[self.language]["add_income"], command=lambda:self.open_input_dialog_event(translations[self.language]["add_income"]))
         self.button_income.grid(row=1, column = 0, padx=10, pady=10)
         self.button_expense = ctk.CTkButton(master=self.sidebar_frame, corner_radius=10, text_color = "black", text=translations[self.language]["add_expense"], command=lambda:self.open_input_dialog_event(translations[self.language]["add_expense"]))
         self.button_expense.grid(row=2, column = 0, padx=10, pady=10)
+        self.button_upload = ctk.CTkButton(master=self.sidebar_frame, corner_radius=10, text_color = "black", text=translations[self.language]["upload"], command=self.upload_file)
+        self.button_upload.grid(row=3, column = 0, padx=10, pady=10)
+        self.button_export = ctk.CTkButton(master=self.sidebar_frame, corner_radius=10, text_color = "black", text=translations[self.language]["export"], command=self.export_file)
+        self.button_export.grid(row=4, column = 0, padx=10, pady=10)
         self.appearance_mode_label = ctk.CTkLabel(master=self.sidebar_frame, text=translations[self.language]["appearance_mode"], anchor="w")
-        self.appearance_mode_label.grid(row=5, column=0, padx=20, pady=(10, 0))
+        self.appearance_mode_label.grid(row=6, column=0, padx=20, pady=(10, 0))
         self.appearence_mode_list = ctk.CTkOptionMenu(master=self.sidebar_frame, values=translations[self.language]["values"], command=self.change_appearance_mode_event)
-        self.appearence_mode_list.grid(row=6, column=0, padx=20, pady=(0, 10))
+        self.appearence_mode_list.grid(row=7, column=0, padx=20, pady=(0, 10))
         self.language_mode_list = ctk.CTkOptionMenu(master=self.sidebar_frame, values=translations[self.language]["languages"], command=self.change_language)
-        self.language_mode_list.grid(row=7, column=0, padx=20, pady=(5, 20))
+        self.language_mode_list.grid(row=8, column=0, padx=20, pady=(5, 20))
         
         #Graphs Frame
         self.graphs_frame = ctk.CTkFrame(master=self)
@@ -94,18 +108,13 @@ class App(ctk.CTk):
         #History Frame
         self.history_frame = ctk.CTkFrame(master=self)
         self.history_frame.grid(row=1, column=1, columnspan=3, rowspan=3, sticky="nsew")
-        #self.history_non_label = ctk.CTkLabel(master=self, text=translations[self.language]["no_history"])
-        #self.history_scrollable_frame = ctk.CTkFrame(master=self.history_frame)
-        #self.history_non_label.grid(row=1, column=1, padx=20, pady=20)
-        #self.history_scrollable_frame.grid(row=1, column=1, columnspan=3, rowspan=3, padx=(20, 0), pady=(20, 0), sticky="nsew")
-
 
         self.appearence_mode_list.set("Dark")
         self.language_mode_list.set(self.language)
         self.refresh_data()
     #Functions
     def change_appearance_mode_event(self, new_appearance_mode: str):
-        if self.language == "Spanish":
+        if self.language == "Spanish" or self.language == "Español":
             if new_appearance_mode == "Claro":
                 translated_mode = "Light"
             elif new_appearance_mode == "Oscuro":
@@ -129,24 +138,36 @@ class App(ctk.CTk):
             movement_type = "Income" 
         else:
             movement_type = "Expense"
-        data.append({"type": movement_type, "amount": quantity, "date": date})
+        data.append({"type": movement_type, "amount": quantity, "date": date, "category": category})
         self.refresh_data()
 
     def change_language(self, language):
         print("Switching laguange to: ", language)
+        if language == "Inglés":
+            language = "English" 
+        elif language == "Español":
+            language = "Spanish"
         self.language = language
         self.title(translations[language]["title"])
         self.button_income.configure(text=translations[language]["add_income"])
         self.button_expense.configure(text=translations[language]["add_expense"])
+        self.button_upload.configure(text=translations[language]["upload"])
+        self.button_export.configure(text=translations[language]["export"])
         self.appearance_mode_label.configure(text=translations[language]["appearance_mode"])
         self.appearence_mode_list.configure(values=translations[language]["values"])
-
+        self.language_mode_list.configure(values=translations[language]["languages"])
+        
         current_mode_to_set = appearance_mode_mapping[language][self.appearence_mode_list.get()]
         self.appearence_mode_list.set(current_mode_to_set)
-
-        self.language_mode_list.set(language)
+        self.language_mode_list.set("Español") if language == "Spanish" else self.language_mode_list.set("English")
+        #self.language_mode_list.set(language)
         self.refresh_data()
         
+    def upload_file(self):
+        print("Uploading file!")
+
+    def export_file(self):
+        print("Export file!")
 
     def refresh_data(self):
         #for widget in self.history_frame.winfo_children():
@@ -163,7 +184,6 @@ class App(ctk.CTk):
                 title_label.grid(row=2, column=idx, padx=10, pady=5)
 
             for idx, entry in enumerate(data):
-                print(idx+3)
                 type_label = ctk.CTkLabel(self.history_scrollable_frame, text=f"{entry['type']}")
                 type_label.grid(row=idx+3, column=0, padx=10, pady=5)
                 amount_label = ctk.CTkLabel(self.history_scrollable_frame, text=f"{entry['amount']}")
