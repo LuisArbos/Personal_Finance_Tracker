@@ -3,9 +3,11 @@ from tkinter import ttk
 import customtkinter as ctk
 import tkinterDnD
 from datetime import datetime
+import pandas as pd
 
 import csv, os, shutil
 
+import seaborn as sns
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pyplot as plt
 
@@ -51,7 +53,8 @@ translations = {
         "export_title": "Save as",
         "graph_title": "Income/Expense Graphic",
         "income_categories": ["Salary", "Other"],
-        "expense_categories": ["House","Services", "Food", "Entertainment", "Other"]
+        "expense_categories": ["House","Services", "Food", "Entertainment", "Other"],
+        "filter_title": "Filters"
     },
     "Spanish": {
         "title": "Rastreador de Finanzas Personales",
@@ -74,13 +77,14 @@ translations = {
         "export_title": "Guardar como",
         "graph_title": " Gráfico de Ingresos y Gastos",
         "income_categories": ["Sueldo", "Otros"],
-        "expense_categories": ["Casa", "Servicios", "Comida", "Ocio", "Otros"]
+        "expense_categories": ["Casa", "Servicios", "Comida", "Ocio", "Otros"],
+        "filter_title": "Filtros"
     }
 
 }
 
 ctk.set_ctk_parent_class(tkinterDnD.Tk)
-ctk.set_appearance_mode("System")    #Pending to add a button to choose dark or light theme
+ctk.set_appearance_mode("System")
 ctk.set_default_color_theme("blue")
 
 class App(ctk.CTk):
@@ -97,14 +101,16 @@ class App(ctk.CTk):
         self.grid_columnconfigure((2, 3), weight=0)
         self.grid_rowconfigure((0, 1, 2), weight=1)
 
-        #Side Bar Frame
+        #Side Bar Section
         self.sidebar_frame = ctk.CTkFrame(master=self)
         self.sidebar_frame.grid(row=0, column=0, rowspan=5, sticky="nsew")
         self.sidebar_frame.grid_rowconfigure(5, weight=1)
         
-        #Side Bar Additions
+        #Title
         self.logo_label = ctk.CTkLabel(self.sidebar_frame, text="Personal Finance \r Tracker", font=ctk.CTkFont(size=20, weight="bold"))
         self.logo_label.grid(row=0, column=0, padx=20, pady=(20, 10))
+
+        #Buttons
         self.button_income = ctk.CTkButton(master=self.sidebar_frame, corner_radius=10, text_color = "black", text=translations[self.language]["add_income"], command=lambda:self.open_input_dialog_event(translations[self.language]["add_income"]))
         self.button_income.grid(row=1, column = 0, padx=10, pady=10)
         self.button_expense = ctk.CTkButton(master=self.sidebar_frame, corner_radius=10, text_color = "black", text=translations[self.language]["add_expense"], command=lambda:self.open_input_dialog_event(translations[self.language]["add_expense"]))
@@ -113,6 +119,8 @@ class App(ctk.CTk):
         self.button_upload.grid(row=3, column = 0, padx=10, pady=10)
         self.button_export = ctk.CTkButton(master=self.sidebar_frame, corner_radius=10, text_color = "black", text=translations[self.language]["export"], command=self.export_file)
         self.button_export.grid(row=4, column = 0, padx=10, pady=10)
+
+        #Additional features
         self.appearance_mode_label = ctk.CTkLabel(master=self.sidebar_frame, text=translations[self.language]["appearance_mode"], anchor="w")
         self.appearance_mode_label.grid(row=6, column=0, padx=20, pady=(10, 0))
         self.appearence_mode_list = ctk.CTkOptionMenu(master=self.sidebar_frame, values=translations[self.language]["values"], command=self.change_appearance_mode_event)
@@ -121,13 +129,25 @@ class App(ctk.CTk):
         self.language_mode_list.grid(row=8, column=0, padx=20, pady=(5, 20))
         
         #Graphs Frame
-        self.graphs_frame = ctk.CTkFrame(master=self)
-        self.graphs_frame.grid(row=0, column=1, columnspan=3, sticky="nsew")
+        self.graphs_frame = ctk.CTkFrame(master=self)        
+        self.graphs_right_frame = ctk.CTkFrame(master=self)
 
         #History Frame
-        self.history_frame = ctk.CTkFrame(master=self)
-        self.history_frame.grid(row=1, column=1, columnspan=3, rowspan=3, sticky="nsew")
+        self.history_frame = ctk.CTkFrame(master=self)        
 
+        #Filter Section
+        self.filter_frame = ctk.CTkFrame(master=self)
+        self.filter_title = ctk.CTkLabel(master=self.filter_frame, text=translations[self.language]["filter_title"], font=ctk.CTkFont(size=16, weight="bold"))
+        
+        self.switch_var_list = [StringVar(value="on"), StringVar(value="on"), StringVar(value="on"), StringVar(value="on"), StringVar(value="on"), StringVar(value="on")]
+        self.switch_1 = ctk.CTkSwitch(master=self.filter_frame, text=translations[self.language]["income_categories"][0], command=lambda i=0:self.switch_event(0), variable=self.switch_var_list[0], onvalue="on", offvalue="off")
+        self.switch_2 = ctk.CTkSwitch(master=self.filter_frame, text=translations[self.language]["expense_categories"][0], command=lambda i=1:self.switch_event(1), variable=self.switch_var_list[1], onvalue="on", offvalue="off")
+        self.switch_3 = ctk.CTkSwitch(master=self.filter_frame, text=translations[self.language]["expense_categories"][1], command=lambda i=2:self.switch_event(2), variable=self.switch_var_list[2], onvalue="on", offvalue="off")
+        self.switch_4 = ctk.CTkSwitch(master=self.filter_frame, text=translations[self.language]["expense_categories"][2], command=lambda i=3:self.switch_event(3), variable=self.switch_var_list[3], onvalue="on", offvalue="off")
+        self.switch_5 = ctk.CTkSwitch(master=self.filter_frame, text=translations[self.language]["expense_categories"][3], command=lambda i=4:self.switch_event(4), variable=self.switch_var_list[4], onvalue="on", offvalue="off")
+        self.switch_6 = ctk.CTkSwitch(master=self.filter_frame, text=translations[self.language]["expense_categories"][4], command=lambda i=5:self.switch_event(5), variable=self.switch_var_list[5], onvalue="on", offvalue="off")
+        
+        #Setting default values
         self.appearence_mode_list.set("Dark")
         self.language_mode_list.set(self.language)
         self.refresh_data()
@@ -157,6 +177,9 @@ class App(ctk.CTk):
 
         self.refresh_data()
 
+    def switch_event(self, i):
+        print(f"Switch {i} pressed", self.switch_var_list[i].get())
+
     def change_language(self, language):
         print("Switching laguange to: ", language)
         if language == "Inglés":
@@ -172,6 +195,13 @@ class App(ctk.CTk):
         self.appearance_mode_label.configure(text=translations[language]["appearance_mode"])
         self.appearence_mode_list.configure(values=translations[language]["values"])
         self.language_mode_list.configure(values=translations[language]["languages"])
+        self.filter_title.configure(text=translations[self.language]["filter_title"])
+        self.switch_1.configure(text=translations[self.language]["income_categories"][0])
+        self.switch_2.configure(text=translations[self.language]["expense_categories"][0])
+        self.switch_3.configure(text=translations[self.language]["expense_categories"][1])
+        self.switch_4.configure(text=translations[self.language]["expense_categories"][2])
+        self.switch_5.configure(text=translations[self.language]["expense_categories"][3])
+        self.switch_6.configure(text=translations[self.language]["expense_categories"][4])
         
         current_mode_to_set = appearance_mode_mapping[language][self.appearence_mode_list.get()]
         self.appearence_mode_list.set(current_mode_to_set)
@@ -196,31 +226,65 @@ class App(ctk.CTk):
         self.input_dialog_window = None
         column_titles = translations[self.language]["column_titles"]
         if not os.path.exists(self.path):
-            self.history_non_label = ctk.CTkLabel(master=self.history_frame, text=translations[self.language]["no_history"])
-            self.history_non_label.grid(row=1, column=1, padx=20, pady=20)
+            self.history_non_label = ctk.CTkLabel(master=self, text=translations[self.language]["no_history"])
+            self.history_non_label.grid(row=1, column=1, columnspan=3, rowspan=3, padx=20, pady=20, sticky="nsew")
         else:
+            #Setting all the visual
             self.history_scrollable_frame = ctk.CTkScrollableFrame(master=self, label_text=translations[self.language]["history"])
-            self.history_scrollable_frame.grid(row=1, column=1, columnspan=3, rowspan=3, sticky="nsew")
+            self.history_scrollable_frame.grid(row=1, column=1, columnspan=2, rowspan=3, sticky="nsew")
+            self.filter_frame.grid(row=1, column=3, rowspan=3, sticky="nsew")
+            self.filter_title.grid(row=1, column=3, padx=10, pady=10)
+            self.switch_1.grid(row=2, column=3, pady=10, padx=20, sticky="nw")
+            self.switch_2.grid(row=3, column=3, pady=10, padx=20, sticky="nw")
+            self.switch_3.grid(row=4, column=3, pady=10, padx=20, sticky="nw")
+            self.switch_4.grid(row=5, column=3, pady=10, padx=20, sticky="nw")
+            self.switch_5.grid(row=6, column=3, pady=10, padx=20, sticky="nw")
+            self.switch_6.grid(row=7, column=3, pady=10, padx=20, sticky="nw")
+
+            self.graphs_frame.grid(row=0, column=1, columnspan=2, sticky="nsew")
+            self.graphs_right_frame.grid(row=0, column=3, sticky="nsew")
+
             for idx, title in enumerate(column_titles):
                 title_label = ctk.CTkLabel(self.history_scrollable_frame, text=title, font=ctk.CTkFont(size=12, weight="bold"))
                 title_label.grid(row=2, column=idx, padx=10, pady=5)
-            with open(self.path, mode='r', newline='') as file:
-                reader = csv.DictReader(file)
-                for idx, entry in enumerate(reader):
-                    if self.language == "English" or self.language == "Inglés":
-                        type_label = ctk.CTkLabel(self.history_scrollable_frame, text=f"{entry['Type']}")
-                    else:
-                        type_label = ctk.CTkLabel(self.history_scrollable_frame, text="Ingreso" if f"{entry['Type']}" == "Income" else "Gasto")
-                    type_label.grid(row=idx+3, column=0, padx=10, pady=5)
-                    amount_label = ctk.CTkLabel(self.history_scrollable_frame, text=f"{entry['Amount']}")
-                    amount_label.grid(row=idx+3, column=1, padx=10, pady=5)
-                    date_label = ctk.CTkLabel(self.history_scrollable_frame, text=f"{entry['Date']}")
-                    date_label.grid(row=idx+3, column=2, padx=10, pady=5)
-                    category_label = ctk.CTkLabel(self.history_scrollable_frame, text=f"{entry.get('Category', 'N/A')}")
-                    category_label.grid(row=idx+3, column=3, padx=10, pady=5)
-                    comment_label = ctk.CTkLabel(self.history_scrollable_frame, text=f"{entry.get('Comment', 'No comment')}")
-                    comment_label.grid(row=idx+3, column=4, padx=10, pady=5)
-        
+
+            self.transaction_df = pd.read_csv(self.path)
+            self.transaction_df['Comment'] = self.transaction_df['Comment'].fillna('').astype(str)
+
+            for i in range(len(self.transaction_df)):
+                if self.language == "English" or self.language == "Inglés":
+                    type_label = ctk.CTkLabel(self.history_scrollable_frame, text=f"{self.transaction_df.Type[i]}")
+                else:
+                    type_label = ctk.CTkLabel(self.history_scrollable_frame, text="Ingreso" if f"{self.transaction_df.Type[i]}" == "Income" else "Gasto")
+                type_label.grid(row=i+3, column=0, padx=10, pady=5)
+                
+                amount_label = ctk.CTkLabel(self.history_scrollable_frame, text=f"{self.transaction_df.Amount[i]}")
+                amount_label.grid(row=i+3, column=1, padx=10, pady=5)
+                
+                date_label = ctk.CTkLabel(self.history_scrollable_frame, text=f"{self.transaction_df.Date[i]}")
+                date_label.grid(row=i+3, column=2, padx=10, pady=5)
+                
+                if self.language == "English" or self.language == "Inglés":
+                    category_label = ctk.CTkLabel(self.history_scrollable_frame, text=f"{self.transaction_df.Category[i]}")
+                else:
+                    match self.transaction_df.Category[i]:
+                        case "Salary":
+                            category_label = ctk.CTkLabel(self.history_scrollable_frame, text="Sueldo")
+                        case "Other":
+                            category_label = ctk.CTkLabel(self.history_scrollable_frame, text="Otros")
+                        case "House":
+                            category_label = ctk.CTkLabel(self.history_scrollable_frame, text="Casa")
+                        case "Services":
+                            category_label = ctk.CTkLabel(self.history_scrollable_frame, text="Servicios")
+                        case "Food":
+                            category_label = ctk.CTkLabel(self.history_scrollable_frame, text="Comida")
+                        case "Entertainment":
+                            category_label = ctk.CTkLabel(self.history_scrollable_frame, text="Ocio")
+                category_label.grid(row=i+3, column=3, padx=10, pady=5)
+
+                comment_label = ctk.CTkLabel(self.history_scrollable_frame, text=f"{self.transaction_df.Comment[i]}")
+                comment_label.grid(row=i+3, column=4, padx=10, pady=5)
+                    
         self.refresh_graphs()
 
     def refresh_graphs(self):
@@ -246,7 +310,52 @@ class App(ctk.CTk):
                             expense_data[category] += amount
                         else:
                             expense_data[category] = amount
+            
+            sns.set(style='dark')
 
+            fig, ax = plt.subplots(figsize=(10, 6))
+            sns.barplot(data=self.transaction_df, x='Category', y='Amount', hue='Type', palette=['#4CAF50', '#FF5722'])
+            ax.set_title('Income and Expenses by Category')
+            ax.set_xlabel('Category')
+            ax.set_ylabel('Amount')
+            ax.set_xticklabels(ax.get_xticklabels(), rotation=45)
+            legend = ax.legend(title='Type')
+            legend.get_title().set_color('white')
+
+            heights = {}
+            for p in ax.patches:
+                current_height = p.get_height()
+                x = p.get_x() + p.get_width() / 2
+                if x not in heights:
+                    heights[x] = current_height
+                elif current_height > heights[x]:
+                    heights[x] = current_height
+
+            for p in ax.patches:
+                current_height = p.get_height()
+                x = p.get_x() + p.get_width() / 2
+                if current_height == heights[x]:
+                    ax.text(x, current_height + 3, f'{current_height:.0f}', ha="center", color="white")
+
+            ax.set_facecolor('#2E2E2E')
+            fig.patch.set_facecolor('#2E2E2E')
+            ax.spines['bottom'].set_color('white')
+            ax.spines['top'].set_color('white')
+            ax.spines['left'].set_color('white')
+            ax.spines['right'].set_color('white')
+            ax.xaxis.label.set_color('white')
+            ax.yaxis.label.set_color('white')
+            ax.title.set_color('white')
+            ax.tick_params(axis='x', colors='white')
+            ax.tick_params(axis='y', colors='white')
+            ax.legend(title='Type', facecolor='#2E2E2E', edgecolor='white', labelcolor='white')
+
+            canvas = FigureCanvasTkAgg(fig, master=self.graphs_frame)
+            canvas.draw()
+            canvas.get_tk_widget().pack(fill=ctk.BOTH, expand=True)
+            
+            
+            """ Old
             labels = list(income_data.keys()) + list(expense_data.keys())
             sizes = list(income_data.values()) + list(expense_data.values())
             colors = ['#4CAF50'] * len(income_data) + ['#FF5722'] * len(expense_data)
@@ -263,7 +372,7 @@ class App(ctk.CTk):
             
             canvas = FigureCanvasTkAgg(fig, master=self.graphs_frame)
             canvas.draw()
-            canvas.get_tk_widget().pack(fill=ctk.BOTH, expand=True)
+            canvas.get_tk_widget().pack(fill=ctk.BOTH, expand=True)"""
 
 class TopLevelWindow(ctk.CTkToplevel):
     def __init__(self, app, title):
