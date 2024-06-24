@@ -1,9 +1,6 @@
-import customtkinter
+import GUI.GUI as GUI
 def main():
-    app = customtkinter.CTk()
-    app.geometry("600x500")
-    app.title("CTk example")
-
+    app = GUI.App()
     app.mainloop()
     
 if __name__ == "__main__":
